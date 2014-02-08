@@ -8,23 +8,24 @@ set -e
 	make
 	sudo /etc/init.d/lighttpd stop
 
-	sudo mkdir -p /var/fastcgi
-	if [[ -f /var/fastcgi/webapp ]]; then
-	  sudo rm /var/fastcgi/webapp
-	fi
+	mkdir -p /var/fastcgi
+        if [[ -f /var/fastcgi/webapp ]]; then
+        rm /var/fastcgi/webapp
+        fi
 
-	if [[ -d /var/fastcgi/templates ]]; then
-	  sudo rm -rf /var/fastcgi/templates
-	fi
+        if [[ -d /var/fastcgi/templates ]]; then
+        rm -rf /var/fastcgi/templates
+        fi
 
-	sudo rm -rf /var/www/*
 
-	sudo cp webapp /var/fastcgi/webapp
-	sudo chmod 777 /var/fastcgi/webapp
-	sudo mkdir -p /var/fastcgi/templates
-	sudo cp -r ../webapp/templates/* /var/fastcgi/templates
-	sudo cp -r ../webapp/static/* /var/www
-	sudo cp ../webapp/robots.txt /var/www/robots.txt
+	rm -rf /var/www/*
+
+	cp webapp /var/fastcgi/webapp
+	chmod 700 /var/fastcgi/webapp
+	mkdir -p /var/fastcgi/templates
+	cp -r ../webapp/templates/* /var/fastcgi/templates
+	cp -r ../webapp/static/* /var/www
+	cp ../webapp/robots.txt /var/www/robots.txt
 
 	if [[ -f /etc/lighttpd/conf-available/10-fastcgi.conf ]]; then
 	  sudo cp ../10-fastcgi.conf /etc/lighttpd/conf-available/10-fastcgi.conf
@@ -32,9 +33,9 @@ set -e
 
 	sudo /etc/init.d/lighttpd start
 
-	dbname="webapp"
-	dbuser="cdc"
-	dbpass="cdc"
+	dbname=""
+	dbuser=""
+	dbpass=""
 	MYSQL=`which mysql`
 
 	Q1="CREATE DATABASE IF NOT EXISTS $dbname;"
@@ -44,7 +45,7 @@ set -e
 	Q5="CREATE TABLE IF NOT EXISTS Users(Username VARCHAR(255), Password VARCHAR(255), LastName VARCHAR(255), FirstName VARCHAR(255), SSN VARCHAR(11), IsAdmin CHAR(1));"
 	Q6="CREATE TABLE IF NOT EXISTS Entries(Username VARCHAR(255), Day DATE, MinutesWorked INT, ApprovedBy VARCHAR(255));"
 
-	sudo chmod +s /var/fastcgi/webapp
+	chmod +s /var/fastcgi/webapp
 
 	$MYSQL -uroot -pcdc -e "${Q1}${Q2}${Q3}${Q4}${Q5}${Q6}"
 )
