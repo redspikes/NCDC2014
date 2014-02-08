@@ -72,93 +72,156 @@ START_HANDLER (login_action_handler, POST, "/login", res, 0, matches) {
 	if(username == NULL){
 		username = "";
 	}
+	
+	char* ptr = strchr(usern,'\'');
+        char* ptr1 = strchr(usern,'\"');
+        char* ptr2 = strchr(usern,'\`');
+        char* ptr3 = strchr(usern,'\b');
+        char* ptr4 = strchr(usern,'\%');
+        char* ptr5 = strchr(usern,'\^');
+
 
 	char* password = get_param(post_data, "password");
 	if(password == NULL){
 		password = "";
 	}
+	
+	char* SECRET = "";
+	
+	char* temp = usern;
 
-	if(authenticate(username,password)){
-		char username_cookie[1024];
-		sprintf(username_cookie, "Username=%s; path=/; max-age=604800;", username);
-		response_add_header(res, "Set-Cookie", username_cookie);
-		response_add_header(res, "Set-Cookie", "Authenticated=yes; path=/; max-age=604800;");
-		response_add_header(res, "Location", "/webapp/timesheet");
-	} else {
-		response_add_header(res, "content-type", "text/html");
-		write_page_template_header(res);
-		response_write(res, "Username or password is incorrect.");
-		write_page_template_footer(res);
-	}
+        char* sess = crypt(SECRET,temp);
+        
+        char* pt = strchr(password,'\'');
+        char* pt1 = strchr(password,'\"');
+        char* pt2 = strchr(password,'\`');
+        char* pt3 = strchr(password,'\b');
+        char* pt4 = strchr(password,'\%');
+        char* pt5 = strchr(password,'\^');
+        
+        
+	
+
+	if(ptr == NULL && ptr1 == NULL && ptr2 == NULL && ptr3 == NULL && ptr4 == NULL && ptr5 == NULL){
+                if(pt == NULL && pt1 == NULL && pt2 ==NULL && pt3 == NULL && pt4 == NULL && pt5 == NULL){
+
+                if(authenticate(usern,password)){
+                        char username_cookie[1024];
+                        sprintf(username_cookie, "Username=%s; path=/; max-age=604800;", usern);
+                        response_add_header(res, "Set-Cookie", username_cookie);
+                        response_add_header(res, "Set-Cookie", sess);
+                        response_add_header(res, "Set-Cookie", "Authenticated=yes; path=/; max-age=604800;");
+                        response_add_header(res, "Location", "/webapp/timesheet");
+                } else {
+                        response_add_header(res, "content-type", "text/html");
+                        write_page_template_header(res);
+                        response_write(res, "Username or password is incorrect.");
+                        //response_write(res, username);
+                        //response_write(res, password);
+                        write_page_template_footer(res);
+                }
+
+                } else {
+                response_add_header(res, "content-type", "text/html");
+                write_page_template_header(res);
+                response_write(res, "You have entered an invalid character");
+                write_page_template_footer(res);
+                }} else {
+                response_add_header(res, "content-type", "text/html");
+                write_page_template_header(res);
+                response_write(res, "You have entered an invalid character");
+                write_page_template_footer(res);
+                }
+
 
 } END_HANDLER
+
 
 // logout action
 START_HANDLER (logout_action_handler, GET, "/logout", res, 0, matches) {
 	// expire session
 	response_add_header(res, "Set-Cookie", "Authenticated=no; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;");
 	response_add_header(res, "Set-Cookie", "Username=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;");
+	response_add_header(res, "Set-Cookie", "sess=");
 	response_add_header(res, "Location", "/webapp/login");
 } END_HANDLER
 
 // add user page
 START_HANDLER (create_user_page_handler, GET, "/user/new", res, 0, matches) {
-	response_add_header(res, "content-type", "text/html");
-	write_page_template_header(res);
-	write_template(res, "./templates/new_user.html.template");
-	write_page_template_footer(res);
+	
+	char* username = get_session_username();
+        response_add_header(res, "content-type", "text/html");
+
+        write_page_template_header(res);
+        if(username != NULL && is_authenticated() && is_admin(username)){
+        write_template(res, "./templates/new_user.html.template");
+        } else {
+        response_write(res, "You are not an ADMIN");
+        }
+
+        write_page_template_footer(res);
+
 } END_HANDLER
 
 // add user action
 START_HANDLER (create_user_action_handler, POST, "/user/create", res, 0, matches) {
-	char* post_data = get_post_string();
 
-	char* username = get_param(post_data, "username");
-	if(username == NULL){
-		username = "";
-	}
+        char* uName = get_session_username();
 
-	char* password = get_param(post_data, "password");
-	if(password == NULL){
-		password = "";
-	}
+        response_add_header(res, "content-type", "text/html");
+                write_page_template_header(res);
 
-	char* first_name = get_param(post_data, "first_name");
-	if(first_name == NULL){
-		first_name = "";
-	}
+        if(uName != NULL && is_authenticated() && is_admin(uName)){
+                char* post_data = get_post_string();
 
-	char* last_name = get_param(post_data, "last_name");
-	if(last_name == NULL){
-		last_name = "";
-	}
+                char* username = get_param(post_data, "username");
+                if(username == NULL){
+                        username = "";
+                }
 
-	char* ssn = get_param(post_data, "ssn");
-	if(ssn == NULL){
-		ssn = "";
-	}
+                char* password = get_param(post_data, "password");
+                if(password == NULL){
+                        password = "";
+                }
 
-	char set_admin = 'N';
-	char* administrator = get_param(post_data, "administrator");
-	if(administrator != NULL){
-		if(strcmp(administrator, "yes") == 0){
-			set_admin = 'Y';
-		}
-	}
+                char* first_name = get_param(post_data, "first_name");
+                if(first_name == NULL){
+                        first_name = "";
+                }
 
-	response_add_header(res, "content-type", "text/html");
-	write_page_template_header(res);
+                char* last_name = get_param(post_data, "last_name");
+                if(last_name == NULL){
+                        last_name = "";
+                }
 
-	if(add_user(username, password, first_name, last_name, ssn, set_admin)){
-		response_write(res, "Success! Created ");
-		response_write(res, username);
-	} else {
-		response_write(res, "Could not create user.");
-	}
+                char* ssn = get_param(post_data, "ssn");
+                if(ssn == NULL){
+                        ssn = "";
+                }
 
-	write_page_template_footer(res);
+                char set_admin = 'N';
+                char* administrator = get_param(post_data, "administrator");
+                if(administrator != NULL){
+                        if(strcmp(administrator, "yes") == 0){
+                                set_admin = 'Y';
+                        }
+                }
+
+                if(add_user(username, password, first_name, last_name, ssn, set_admin)){
+                        response_write(res, "Success! Created ");
+                        response_write(res, username);
+                } else {
+                        response_write(res, "Could not create user.");
+                }
+
+                } else {
+                        response_write(res, "You are not an ADMIN");
+                }
+
+                write_page_template_footer(res);
 
 } END_HANDLER
+
 
 // timesheet page
 // TODO: should we do some XSS protection????
@@ -228,32 +291,43 @@ START_HANDLER (timesheet_page_handler, GET, "/timesheet", res, 0, matches) {
 
 // timesheet content
 START_HANDLER (timesheet_content_handler, GET, "/entries.json", res, 0, matches) {
-	response_add_header(res, "content-type", "text/html");
-	char* query_string = get_query_string();
-	char* username = get_param(query_string, "user");
-	char* start_date = get_param(query_string, "start");
-	char* end_date = get_param(query_string, "end");
-	render_entries_json(res, username, start_date, end_date);	
+//You have to be admin
+        char* uName = get_session_username();
+        if(uName != NULL && is_authenticated()){
+
+        response_add_header(res, "content-type", "text/html");
+        char* query_string = get_query_string();
+        char* username = get_param(query_string, "user");
+        char* start_date = get_param(query_string, "start");
+        char* end_date = get_param(query_string, "end");
+
+        render_entries_json(res, username, start_date, end_date);
+        }
+
 } END_HANDLER
 
 // timesheet approve action
 START_HANDLER (timesheet_approve_handler, GET, "/entry/approve", res, 0, matches) {
-	response_add_header(res, "content-type", "text/html");
-	char* query_string = get_query_string();
-	char* day = get_param(query_string, "day");
-	char* user = get_param(query_string, "user");
-	response_add_header(res, "content-type", "text/html");
-	write_page_template_header(res);	
-	if(user != NULL && day != NULL){
-		if(approve_entry(user, day)){
-			response_write(res, "Success: Timesheet entry approved. Go <a href=\"/webapp/timesheet\">back</a> to timesheet.");
-		} else {
-			response_write(res, "Error: Could not approve timesheet entry.");
-		}
-	} else {
-		response_write(res, "Error: Could not approve timesheet entry.");	
-	}
-	write_page_template_footer(res);	
+	 char* uName = get_session_username();
+        if(uName != NULL && is_authenticated() && is_admin(uName)){
+
+        response_add_header(res, "content-type", "text/html");
+        char* query_string = get_query_string();
+        char* day = get_param(query_string, "day");
+        char* user = get_param(query_string, "user");
+        response_add_header(res, "content-type", "text/html");
+        write_page_template_header(res);
+        if(user != NULL && day != NULL){
+                if(approve_entry(user, day)){
+                        response_write(res, "Success: Timesheet entry approved. Go <a href=\"/webapp/timesheet\">back</a> to timesheet.");
+                } else {
+                        response_write(res, "Error: Could not approve timesheet entry.");
+                }
+        } else {
+                response_write(res, "Error: Could not approve timesheet entry.");
+        }
+        write_page_template_footer(res);
+        }
 } END_HANDLER
 
 // new timesheet content
@@ -266,34 +340,48 @@ START_HANDLER (entry_page_handler, GET, "/entry/new", res, 0, matches) {
 
 // timesheet content creator
 START_HANDLER (entry_action_handler, POST, "/entry/create", res, 0, matches) {
-	char* query_string = get_post_string();
-	char* username = get_param(query_string, "username");
-	char* day = get_param(query_string, "day");
-	char* minutes_worked = get_param(query_string, "minutes");
-	response_add_header(res, "content-type", "text/html");
-	write_page_template_header(res);
-	if(username != NULL && day != NULL && minutes_worked != NULL){
-		if(add_entry(username, day, minutes_worked)){	
-			response_write(res, "Your time entry has been recorded and is awaiting approval.  Go <a href=\"/webapp/timesheet\">back</a> to timesheet.");		
-		} else {
-			response_write(res, "Error: Could not create time entry.");		
-		}
-	} else {
-		response_write(res, "Error: Could not create time entry.");	
-	}
-	write_page_template_footer(res);
+ char* query_string = get_post_string();
+        char* username = get_param(query_string, "username");
+        char* day = get_param(query_string, "day");
+        char* minutes_worked = get_param(query_string, "minutes");
+        response_add_header(res, "content-type", "text/html");
+
+        write_page_template_header(res);
+
+
+        if( username != 0 && strcmp(username,get_session_username()) == 0  &&  day != NULL && minutes_worked != NULL){
+                if(add_entry(username, day, minutes_worked)){
+                        response_write(res, "Your time entry has been recorded and is awaiting approval.  Go <a href=\"/webapp/timesheet\">back</a> to timesheet.");
+                } else {
+                        response_write(res, "Error:HELP Could not create time entry.");
+                }
+        } else {
+                response_write(res, "Error: Could not create time entry");
+        }
+
+        write_page_template_footer(res);
+
 } END_HANDLER
 
 // admin page
 START_HANDLER (admin_page_handler, GET, "/admin", res, 0, matches) {
-	response_add_header(res, "content-type", "text/html");
-	write_page_template_header(res);
-	write_template(res,"./templates/admin.html.template");
-	response_write(res, "<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" class=\"table table-striped table-bordered\">");
-	response_write(res, "<tr><th>Username</th><th>Password</th><th>First Name</th><th>Last Name</th><th>Social Security Number</th><th>Is Admin</th></tr>");
-	dump_tables(res);
-	response_write(res, "</table>");
-	write_page_template_footer(res);
+	 response_add_header(res, "content-type", "text/html");
+
+        write_page_template_header(res);
+
+        if(is_admin(get_session_username()) && is_authenticated()){
+
+        write_template(res,"./templates/admin.html.template");
+        response_write(res, "<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" class=\"table table-striped table-bordered\">");
+        response_write(res, "<tr><th>Username</th><th>Password</th><th>First Name</th><th>Last Name</th><th>Social Security Number</th><th>Is Admin</th></tr>");
+        dump_tables(res);
+        response_write(res, "</table>");
+        } else {
+                response_write(res, " You are not an ADMIN ");
+        }
+
+        write_page_template_footer(res);
+
 } END_HANDLER
 
 // javascript vars
